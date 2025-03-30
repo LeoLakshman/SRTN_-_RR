@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="https://raw.githubusercontent.com/leolakshman/SRTN_1/main/assets/logo.png" alt="SRTN and Round Robin Scheduler Logo" width="200">
+  <img src="assets/logo.png" alt="SRTN and Round Robin Scheduler Logo" width="200">
   <h1>✨ SRTN & Round Robin Job Scheduling Visualizer ✨</h1>
   <p>A captivating web application to simulate and visualize CPU scheduling algorithms.</p>
 </div>
