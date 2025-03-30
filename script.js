@@ -49,34 +49,20 @@
 
 
         function updateJobTable() {
-
-            const tableBody = document.querySelector("#jobTable");
-
-            tableBody.innerHTML = '';
-
-            jobs.forEach((job, index) => {
-
-                const row = document.createElement("tr");
-
-                row.innerHTML = `
-
-                    <td>J${job.id}</td>
-
-                    <td><input type="number" class="form-control" step="0.1" value="${job.arrivalTime}" min="0" onchange="updateJobProperty(${index}, 'arrivalTime', this.value)"></td>
-
-                    <td><input type="number" class="form-control" step="0.1" value="${job.burstTime}" min="0.1" onchange="updateJobProperty(${index}, 'burstTime', this.value)"></td>
-
-                    <td>${job.startTime === -1 ? '-' : job.startTime.toFixed(1)}</td>
-
-                    <td>${job.endTime.toFixed(1)}</td>
-
-                    <td>${job.turnaroundTime.toFixed(1)}</td>`;
-
-                tableBody.appendChild(row);
-
-            });
-
-        }
+    const tableBody = document.querySelector("#jobTable");
+    tableBody.innerHTML = '';
+    jobs.forEach((job, index) => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+            <td>J${job.id}</td>
+            <td><input type="number" class="form-control" step="0.1" value="${job.arrivalTime.toFixed(1)}" min="0" onchange="updateJobProperty(${index}, 'arrivalTime', this.value)"></td>
+            <td><input type="number" class="form-control" step="0.1" value="${job.burstTime.toFixed(1)}" min="0.1" onchange="updateJobProperty(${index}, 'burstTime', this.value)"></td>
+            <td>${job.startTime === -1 ? '-' : job.startTime.toFixed(1)}</td>
+            <td>${job.endTime.toFixed(1)}</td>
+            <td>${job.turnaroundTime.toFixed(1)}</td>`;
+        tableBody.appendChild(row);
+    });
+}
 
 
 
