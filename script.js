@@ -5,7 +5,7 @@ function addJob() {
     const newJob = {
         id: jobs.length + 1,
         arrivalTime: 0.0,
-        burstTime: 0.0,
+        burstTime: 0.0, 
         remainingTime: 0.0,
         startTime: -1.0,
         endTime: 0.0,
