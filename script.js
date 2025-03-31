@@ -173,16 +173,17 @@ function calculateRoundRobin() {
         });
 
         if (Math.abs(currentTime % timeQuantum) < 0.0001) { // Using a small tolerance for float comparison
-            // Return running jobs to queue if they're not finished
+            const jobsToRequeue = [];
             runningJobs.forEach((runningJob, index) => {
                 if (runningJob !== null) {
                     let job = jobs.find(j => j.id === runningJob.id);
                     if (job.remainingTime > 0) {
-                        jobQueue.push(job);
+                        jobsToRequeue.push(job);
                     }
-                    runningJobs[index] = null;
                 }
             });
+            jobQueue.push(...jobsToRequeue);
+            runningJobs = runningJobs.map(() => null); // Clear all running jobs
 
             // Record queue state for visualization
             jobQueueHistory.push({
