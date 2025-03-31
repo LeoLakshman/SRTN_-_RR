@@ -259,46 +259,44 @@ function calculateAverageTurnaroundTime() {
 }
 
 function drawGanttChart(jobHistory, jobQueueHistory) {
-    // Logic for drawing Gantt chart
     const ganttChart = document.getElementById("ganttChart");
     ganttChart.innerHTML = '';
 
-    const maxEndTime = Math.max(...jobHistory.map(entry => entry.endTime));
+    const cpuCount = parseInt(document.getElementById("cpuCount").value);
     const timeQuantum = parseFloat(document.getElementById("timeQuantum").value);
+    const maxEndTime = Math.max(...jobHistory.map(entry => entry.endTime));
 
-    // Draw CPU rows
-    for (let i = 0; i < parseInt(document.getElementById("cpuCount").value); i++) {
+    for (let i = 0; i < cpuCount; i++) {
         const rowDiv = document.createElement("div");
         rowDiv.className = "cpu-row";
         ganttChart.appendChild(rowDiv);
 
-        let currentJobId = null;
-        let currentBlock = null;
-        let blockStartTime = null;
+        let currentTimeForRow = 0;
+        const cpuHistory = jobHistory.filter(entry => entry.cpuId === i).sort((a, b) => a.startTime - b.startTime);
 
-        jobHistory.filter(entry => entry.cpuId === i).forEach((entry, index) => {
-            if (entry.jobId !== currentJobId) {
-                if (currentBlock) {
-                    currentBlock.style.width = `${((entry.startTime - blockStartTime) / maxEndTime) * 100}%`;
-                    rowDiv.appendChild(currentBlock);
+        cpuHistory.forEach(entry => {
+            let blockDuration = entry.endTime - entry.startTime;
+            let blocks = Math.ceil(blockDuration / timeQuantum);
+
+            for (let b = 0; b < blocks; b++) {
+                const blockStartTime = entry.startTime + (b * timeQuantum);
+                const blockEndTime = Math.min(entry.endTime, blockStartTime + timeQuantum);
+                const widthPercentage = ((blockEndTime - blockStartTime) / maxEndTime) * 100;
+
+                if (widthPercentage > 0) {
+                    const jobBlock = document.createElement("div");
+                    jobBlock.className = "job-block";
+                    jobBlock.style.width = `${widthPercentage}%`;
+
+                    if (entry.jobId === 'idle') {
+                        jobBlock.classList.add('idle-block');
+                    } else {
+                        jobBlock.style.backgroundColor = colors[(entry.jobId - 1) % colors.length];
+                        jobBlock.textContent = `J${entry.jobId}`;
+                    }
+                    rowDiv.appendChild(jobBlock);
                 }
-
-                currentJobId = entry.jobId;
-                blockStartTime = entry.startTime;
-
-                currentBlock = document.createElement("div");
-                currentBlock.className = "job-block";
-                if (entry.jobId === 'idle') {
-                    currentBlock.classList.add('idle-block');
-                } else {
-                    currentBlock.style.backgroundColor = colors[(entry.jobId - 1) % colors.length];
-                    currentBlock.textContent = `J${entry.jobId}`;
-                }
-            }
-
-            if (index === jobHistory.filter(e => e.cpuId === i).length - 1) {
-                currentBlock.style.width = `${((entry.endTime - blockStartTime) / maxEndTime) * 100}%`;
-                rowDiv.appendChild(currentBlock);
+                currentTimeForRow = blockEndTime;
             }
         });
     }
@@ -308,22 +306,18 @@ function drawGanttChart(jobHistory, jobQueueHistory) {
     timeAxisDiv.className = "time-axis";
     ganttChart.appendChild(timeAxisDiv);
 
-    // Add time markers and job queues at time quantum intervals
     for (let t = 0; t <= maxEndTime; t += timeQuantum) {
-        // Add time marker
         const markerDiv = document.createElement("div");
         markerDiv.className = "time-marker";
         markerDiv.style.left = `${(t / maxEndTime * 100)}%`;
         markerDiv.textContent = t.toFixed(1);
         timeAxisDiv.appendChild(markerDiv);
 
-        // Add vertical time line
         const lineDiv = document.createElement("div");
         lineDiv.className = "dashed-line";
         lineDiv.style.left = `${(t / maxEndTime * 100)}%`;
         ganttChart.appendChild(lineDiv);
 
-        // Add job queue information
         const queueEntry = jobQueueHistory.find(entry => Math.abs(entry.time - t) < 0.0001);
         if (queueEntry) {
             const queueDiv = document.createElement("div");
@@ -345,24 +339,20 @@ function drawGanttChart(jobHistory, jobQueueHistory) {
         }
     }
 
-    // Add job arrival markers
     jobs.forEach(job => {
         if (job.arrivalTime > 0 && job.arrivalTime <= maxEndTime) {
-            // Add job name marker
             const arrivalNameDiv = document.createElement("div");
             arrivalNameDiv.className = "job-arrival-name";
             arrivalNameDiv.style.left = `${(job.arrivalTime / maxEndTime * 100)}%`;
             arrivalNameDiv.textContent = `J${job.id}`;
             timeAxisDiv.appendChild(arrivalNameDiv);
 
-            // Add arrival time marker
             const arrivalTimeDiv = document.createElement("div");
             arrivalTimeDiv.className = "job-arrival";
             arrivalTimeDiv.style.left = `${(job.arrivalTime / maxEndTime * 100)}%`;
             arrivalTimeDiv.textContent = job.arrivalTime.toFixed(1);
             timeAxisDiv.appendChild(arrivalTimeDiv);
 
-            // Add arrival vertical line
             const arrivalLineDiv = document.createElement("div");
             arrivalLineDiv.className = "arrival-line";
             arrivalLineDiv.style.left = `${(job.arrivalTime / maxEndTime * 100)}%`;
@@ -370,7 +360,6 @@ function drawGanttChart(jobHistory, jobQueueHistory) {
         }
     });
 
-    // Adjust container height
     const containerHeight = ganttChart.offsetHeight + 100;
     document.getElementById('ganttChartContainer').style.height = `${containerHeight}px`;
 }
