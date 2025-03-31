@@ -275,12 +275,11 @@ function drawGanttChart(jobHistory, jobQueueHistory) {
         const cpuHistory = jobHistory.filter(entry => entry.cpuId === i).sort((a, b) => a.startTime - b.startTime);
 
         cpuHistory.forEach(entry => {
-            let blockDuration = entry.endTime - entry.startTime;
-            let blocks = Math.ceil(blockDuration / timeQuantum);
+            let remainingDuration = entry.endTime - entry.startTime;
+            let blockStartTime = entry.startTime;
 
-            for (let b = 0; b < blocks; b++) {
-                const blockStartTime = entry.startTime + (b * timeQuantum);
-                const blockEndTime = Math.min(entry.endTime, blockStartTime + timeQuantum);
+            while (remainingDuration > 0) {
+                const blockEndTime = Math.min(blockStartTime + timeQuantum, entry.endTime);
                 const widthPercentage = ((blockEndTime - blockStartTime) / maxEndTime) * 100;
 
                 if (widthPercentage > 0) {
@@ -296,6 +295,9 @@ function drawGanttChart(jobHistory, jobQueueHistory) {
                     }
                     rowDiv.appendChild(jobBlock);
                 }
+
+                remainingDuration -= (blockEndTime - blockStartTime);
+                blockStartTime = blockEndTime;
                 currentTimeForRow = blockEndTime;
             }
         });
