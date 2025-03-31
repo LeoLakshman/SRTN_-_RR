@@ -164,21 +164,26 @@ function calculateRoundRobin() {
     let jobHistory = [];
     let jobQueueHistory = [];
 
-    while (completedJobs < jobs.length) {
+    while (completedJobs < jobs.length && currentTime < 1000) { // Added a safety break
+        console.log(`Current Time: ${currentTime.toFixed(2)}, Completed Jobs: ${completedJobs}`);
+
         // Check for new arrivals
         jobs.forEach(job => {
             if (Math.abs(job.arrivalTime - currentTime) < 0.0001 && !jobQueue.includes(job) && job.remainingTime > 0) {
+                console.log(`Job J${job.id} arrived at ${currentTime.toFixed(2)}`);
                 jobQueue.push(job);
             }
         });
 
-        if (Math.abs(currentTime % timeQuantum) < 0.0001) {
+        if (timeQuantum > 0 && Math.abs(currentTime % timeQuantum) < 0.0001) {
+            console.log(`Time Quantum reached at ${currentTime.toFixed(2)}`);
             const jobsToRequeue = [];
             runningJobs.forEach((runningJob, index) => {
                 if (runningJob !== null) {
                     let job = jobs.find(j => j.id === runningJob.id);
                     if (job.remainingTime > 0) {
                         jobsToRequeue.push(job);
+                        console.log(`Job J${job.id} requeued at ${currentTime.toFixed(2)}`);
                     }
                 }
             });
@@ -200,6 +205,7 @@ function calculateRoundRobin() {
                     let job = jobQueue.shift();
                     if (job.startTime === -1) {
                         job.startTime = currentTime;
+                        console.log(`Job J${job.id} started at ${currentTime.toFixed(2)} on CPU ${i}`);
                     }
                     runningJobs[i] = { id: job.id, allocatedTime: 0.0 };
                 }
@@ -228,6 +234,7 @@ function calculateRoundRobin() {
                     job.turnaroundTime = job.endTime - job.arrivalTime;
                     completedJobs++;
                     runningJobs[i] = null;
+                    console.log(`Job J${job.id} finished at ${currentTime.toFixed(2)}`);
                 }
             } else {
                 jobHistory.push({
@@ -283,11 +290,13 @@ function drawGanttChart(jobHistory, jobQueueHistory) {
                 const blockEndTime = Math.min(currentTime + timeQuantum, endTime);
                 const duration = blockEndTime - currentTime;
                 const widthPercentage = (duration / maxEndTime) * 100;
+                const startPercentage = (currentTime / maxEndTime) * 100;
 
                 if (widthPercentage > 0) {
                     const jobBlock = document.createElement("div");
                     jobBlock.className = "job-block";
                     jobBlock.style.width = `${widthPercentage}%`;
+                    jobBlock.style.left = `${startPercentage}%`; // Set the starting position
 
                     if (entry.jobId === 'idle') {
                         jobBlock.classList.add('idle-block');
@@ -307,7 +316,8 @@ function drawGanttChart(jobHistory, jobQueueHistory) {
     timeAxisDiv.className = "time-axis";
     ganttChart.appendChild(timeAxisDiv);
 
-    for (let t = 0; t <= maxEndTime; t += timeQuantum) {
+    const increment = timeQuantum > 0 && maxEndTime > 0 ? timeQuantum : (maxEndTime > 0 ? maxEndTime / 10 : 1);
+    for (let t = 0; t <= maxEndTime; t += increment) {
         const markerDiv = document.createElement("div");
         markerDiv.className = "time-marker";
         markerDiv.style.left = `${(t / maxEndTime * 100)}%`;
