@@ -247,6 +247,7 @@ function calculateRoundRobin() {
     drawGanttChart(jobHistory, jobQueueHistory);
 }
 
+
 function calculateAverageTurnaroundTime() {
     const turnaroundTimes = jobs.map(job => job.turnaroundTime);
     const totalTurnaroundTime = turnaroundTimes.reduce((sum, time) => sum + time, 0.0);
