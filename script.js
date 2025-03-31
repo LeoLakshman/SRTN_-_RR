@@ -1,16 +1,3 @@
-Got it! You want to set some default values for the initial jobs and handle cases where the burst time is zero to prevent crashes. Let's tackle these one by one.
-
-**1. Setting Default Values for Initial Jobs:**
-
-We can modify the initialization part of your code to create the first four jobs with the arrival and burst times you specified.
-
-**2. Handling Zero Burst Time:**
-
-To prevent crashes when a burst time is zero, we should add a check in the `updateJobProperty` function. If the entered burst time is zero, we can either prevent the update or handle it in a way that makes sense for your application (e.g., show an error message). Since a job with zero burst time wouldn't really need to be scheduled, preventing the update seems like a good approach.
-
-Here's how we can update your code:
-
-```javascript
 let jobs = [];
 const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#F67280', '#C06C84'];
 
