@@ -4,9 +4,9 @@ const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#F67280'
 function addJob(arrivalTime = 0.0, burstTime = 0.0) {
     const newJob = {
         id: jobs.length + 1,
-        arrivalTime: arrivalTime,
-        burstTime: burstTime,
-        remainingTime: burstTime,
+        arrivalTime: parseFloat(arrivalTime),
+        burstTime: parseFloat(burstTime),
+        remainingTime: parseFloat(burstTime),
         startTime: -1.0,
         endTime: 0.0,
         turnaroundTime: 0.0,
@@ -24,18 +24,17 @@ function removeLastJob() {
 }
 
 function updateJobTable() {
-    const tableBody = document.querySelector("#jobTable");
+    const tableBody = document.querySelector("#jobTable tbody");
     tableBody.innerHTML = '';
     jobs.forEach((job, index) => {
-        const row = document.createElement("tr");
-        row.innerHTML = `
-            <td>J${job.id}</td>
+        const row = tableBody.insertRow();
+        row.innerHTML = 
+            `<td>J${job.id}</td>
             <td><input type="number" class="form-control" step="0.1" value="${job.arrivalTime}" min="0" onchange="updateJobProperty(${index}, 'arrivalTime', this.value)"></td>
             <td><input type="number" class="form-control" step="0.1" value="${job.burstTime}" min="0.1" onchange="updateJobProperty(${index}, 'burstTime', this.value)"></td>
             <td>${job.startTime === -1 ? '-' : job.startTime.toFixed(1)}</td>
             <td>${job.endTime.toFixed(1)}</td>
             <td>${job.turnaroundTime.toFixed(1)}</td>`;
-        tableBody.appendChild(row);
     });
 }
 
@@ -296,7 +295,6 @@ function drawGanttChart(jobHistory, jobQueueHistory) {
         });
     }
 
-    // Add time axis
     const timeAxisDiv = document.createElement("div");
     timeAxisDiv.className = "time-axis";
     ganttChart.appendChild(timeAxisDiv);
