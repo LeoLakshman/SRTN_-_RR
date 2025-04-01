@@ -1,12 +1,12 @@
 let jobs = [];
 const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#F67280', '#C06C84'];
 
-function addJob(arrivalTime = 0.0, burstTime = 0.0) {
+function addJob() {
     const newJob = {
         id: jobs.length + 1,
-        arrivalTime: parseFloat(arrivalTime),
-        burstTime: parseFloat(burstTime),
-        remainingTime: parseFloat(burstTime),
+        arrivalTime: 0.0,
+        burstTime: 0.0,
+        remainingTime: 0.0,
         startTime: -1.0,
         endTime: 0.0,
         turnaroundTime: 0.0,
@@ -24,63 +24,64 @@ function removeLastJob() {
 }
 
 function updateJobTable() {
-    const tableBody = document.querySelector("#jobTable tbody");
-    if (!tableBody) {
-        console.error('Element with ID "jobTable" not found.');
-        return;
-    }
+    const tableBody = document.querySelector("#jobTable");
     tableBody.innerHTML = '';
     jobs.forEach((job, index) => {
-        const row = tableBody.insertRow();
-        row.innerHTML = 
-            `<td>J${job.id}</td>
+        const row = document.createElement("tr");
+        row.innerHTML = `
+            <td>J${job.id}</td>
             <td><input type="number" class="form-control" step="0.1" value="${job.arrivalTime}" min="0" onchange="updateJobProperty(${index}, 'arrivalTime', this.value)"></td>
             <td><input type="number" class="form-control" step="0.1" value="${job.burstTime}" min="0.1" onchange="updateJobProperty(${index}, 'burstTime', this.value)"></td>
             <td>${job.startTime === -1 ? '-' : job.startTime.toFixed(1)}</td>
             <td>${job.endTime.toFixed(1)}</td>
             <td>${job.turnaroundTime.toFixed(1)}</td>`;
+        tableBody.appendChild(row);
     });
 }
 
 function updateJobProperty(index, property, value) {
-    jobs[index][property] = parseFloat(value);
+    const parsedValue = parseFloat(value);
+    if (property === 'burstTime' && parsedValue <= 0) {
+        alert("Burst time must be greater than zero.");
+        // Revert the input field to the previous valid value
+        const inputElement = document.querySelectorAll(`#jobTable tr:nth-child(${index + 1}) td:nth-child(3) input`)[0];
+        inputElement.value = jobs[index].burstTime;
+        return; // Don't update if burst time is zero or negative
+    }
+    jobs[index][property] = parsedValue;
     if (property === 'burstTime') {
-        jobs[index].remainingTime = parseFloat(value);
+        jobs[index].remainingTime = parsedValue;
     }
 }
 
 function calculateSRTN() {
+    // Logic for SRTN scheduling
     const cpuCount = parseInt(document.getElementById("cpuCount").value);
-    const timeQuantum = parseFloat(document.getElementById("timeQuantum").value);
+    const timeQuantum = parseFloat(document.getElementById("timeQuantum").value); // Changed to parseFloat
 
-    // Validate burst times
-    if (jobs.some(job => job.burstTime <= 0)) {
-        alert("Burst time for all jobs must be greater than 0.");
-        return;
-    }
-
-    // Reset job states
     jobs.forEach(job => {
         job.remainingTime = job.burstTime;
-        job.startTime = -1.0;
-        job.endTime = 0.0;
+        job.startTime = -1.0; // Ensure it's a float
+        job.endTime = 0.0;    // Ensure it's a float
         job.turnaroundTime = 0.0;
         job.lastExecutionTime = -1.0;
     });
 
-    let currentTime = 0.0;
+    let currentTime = 0.0; // Ensure it's a float
     let completedJobs = 0;
     let runningJobs = new Array(cpuCount).fill(null);
     let jobHistory = [];
     let jobQueueHistory = [];
 
     while (completedJobs < jobs.length) {
+        // Get all available jobs, including those currently running that need to be considered
         let availableJobs = jobs.filter(job =>
             job.arrivalTime <= currentTime &&
             job.remainingTime > 0
         ).sort((a, b) => a.remainingTime - b.remainingTime || a.arrivalTime - b.arrivalTime);
 
-        if (Math.abs(currentTime % timeQuantum) < 0.0001) {
+        if (Math.abs(currentTime % timeQuantum) < 0.0001) { // Using a small tolerance for float comparison
+            // Store queue state for visualization
             jobQueueHistory.push({
                 time: currentTime,
                 jobs: availableJobs.filter(job =>
@@ -91,34 +92,35 @@ function calculateSRTN() {
                 }))
             });
 
+            // Reassign CPUs based on shortest remaining time
             runningJobs = runningJobs.map(() => null);
             for (let i = 0; i < Math.min(cpuCount, availableJobs.length); i++) {
                 let job = availableJobs[i];
                 if (job.startTime === -1) {
                     job.startTime = currentTime;
                 }
-                runningJobs[i] = { id: job.id, allocatedTime: 0.0 };
+                runningJobs[i] = { id: job.id, allocatedTime: 0.0 }; // Ensure it's a float
             }
         }
 
+        // Process each CPU
         for (let i = 0; i < cpuCount; i++) {
             if (runningJobs[i] !== null) {
                 let runningJob = runningJobs[i];
                 let job = jobs.find(j => j.id === runningJob.id);
-                const executionTime = Math.min(timeQuantum, job.remainingTime);
 
-                job.remainingTime -= executionTime;
-                runningJob.allocatedTime += executionTime;
+                job.remainingTime -= 1.0; // Decrement by 1 unit of time
+                runningJob.allocatedTime += 1.0;
 
                 jobHistory.push({
                     jobId: job.id,
                     cpuId: i,
                     startTime: currentTime,
-                    endTime: currentTime + executionTime
+                    endTime: currentTime + 1.0
                 });
 
-                if (job.remainingTime <= 0.0001) {
-                    job.endTime = currentTime + executionTime;
+                if (job.remainingTime <= 0.0001) { // Using a small tolerance for float comparison
+                    job.endTime = currentTime + 1.0;
                     job.turnaroundTime = job.endTime - job.arrivalTime;
                     completedJobs++;
                     runningJobs[i] = null;
@@ -128,12 +130,12 @@ function calculateSRTN() {
                     jobId: 'idle',
                     cpuId: i,
                     startTime: currentTime,
-                    endTime: currentTime + timeQuantum
+                    endTime: currentTime + 1.0
                 });
             }
         }
 
-        currentTime += timeQuantum;
+        currentTime += 1.0; // Increment time by 1 unit
     }
 
     updateJobTable();
@@ -142,25 +144,20 @@ function calculateSRTN() {
 }
 
 function calculateRoundRobin() {
+    // Logic for Round Robin scheduling
     const cpuCount = parseInt(document.getElementById("cpuCount").value);
-    const timeQuantum = parseFloat(document.getElementById("timeQuantum").value);
-
-    // Validate burst times
-    if (jobs.some(job => job.burstTime <= 0)) {
-        alert("Burst time for all jobs must be greater than 0.");
-        return;
-    }
+    const timeQuantum = parseFloat(document.getElementById("timeQuantum").value); // Changed to parseFloat
 
     // Reset job states
     jobs.forEach(job => {
         job.remainingTime = job.burstTime;
-        job.startTime = -1.0;
-        job.endTime = 0.0;
+        job.startTime = -1.0; // Ensure it's a float
+        job.endTime = 0.0;    // Ensure it's a float
         job.turnaroundTime = 0.0;
         job.lastExecutionTime = -1.0;
     });
 
-    let currentTime = 0.0;
+    let currentTime = 0.0; // Ensure it's a float
     let completedJobs = 0;
     let runningJobs = new Array(cpuCount).fill(null);
     let jobQueue = [];
@@ -168,23 +165,27 @@ function calculateRoundRobin() {
     let jobQueueHistory = [];
 
     while (completedJobs < jobs.length) {
+        // Check for new arrivals
         jobs.forEach(job => {
-            if (Math.abs(job.arrivalTime - currentTime) < 0.0001 && !jobQueue.includes(job) && job.remainingTime > 0) {
+            if (Math.abs(job.arrivalTime - currentTime) < 0.0001 && !jobQueue.includes(job) && job.remainingTime > 0) { // Using a small tolerance
                 jobQueue.push(job);
             }
         });
 
-        if (Math.abs(currentTime % timeQuantum) < 0.0001) {
+        if (Math.abs(currentTime % timeQuantum) < 0.0001) { // Using a small tolerance for float comparison
+            const jobsToRequeue = [];
             runningJobs.forEach((runningJob, index) => {
                 if (runningJob !== null) {
                     let job = jobs.find(j => j.id === runningJob.id);
                     if (job.remainingTime > 0) {
-                        jobQueue.push(job);
+                        jobsToRequeue.push(job);
                     }
-                    runningJobs[index] = null;
                 }
             });
+            jobQueue.push(...jobsToRequeue);
+            runningJobs = runningJobs.map(() => null); // Clear all running jobs
 
+            // Record queue state for visualization
             jobQueueHistory.push({
                 time: currentTime,
                 jobs: jobQueue.map(job => ({
@@ -193,35 +194,36 @@ function calculateRoundRobin() {
                 }))
             });
 
+            // Assign jobs to available CPUs
             for (let i = 0; i < cpuCount && jobQueue.length > 0; i++) {
                 if (runningJobs[i] === null) {
                     let job = jobQueue.shift();
                     if (job.startTime === -1) {
                         job.startTime = currentTime;
                     }
-                    runningJobs[i] = { id: job.id, allocatedTime: 0.0 };
+                    runningJobs[i] = { id: job.id, allocatedTime: 0.0 }; // Ensure it's a float
                 }
             }
         }
 
+        // Process each CPU
         for (let i = 0; i < cpuCount; i++) {
             if (runningJobs[i] !== null) {
                 let runningJob = runningJobs[i];
                 let job = jobs.find(j => j.id === runningJob.id);
-                const executionTime = Math.min(timeQuantum, job.remainingTime);
 
-                job.remainingTime -= executionTime;
-                runningJob.allocatedTime += executionTime;
+                job.remainingTime -= 1.0; // Decrement by 1 unit of time
+                runningJob.allocatedTime += 1.0;
 
                 jobHistory.push({
                     jobId: job.id,
                     cpuId: i,
                     startTime: currentTime,
-                    endTime: currentTime + executionTime
+                    endTime: currentTime + 1.0
                 });
 
-                if (job.remainingTime <= 0.0001) {
-                    job.endTime = currentTime + executionTime;
+                if (job.remainingTime <= 0.0001) { // Using a small tolerance for float comparison
+                    job.endTime = currentTime + 1.0;
                     job.turnaroundTime = job.endTime - job.arrivalTime;
                     completedJobs++;
                     runningJobs[i] = null;
@@ -231,12 +233,12 @@ function calculateRoundRobin() {
                     jobId: 'idle',
                     cpuId: i,
                     startTime: currentTime,
-                    endTime: currentTime + timeQuantum
+                    endTime: currentTime + 1.0
                 });
             }
         }
 
-        currentTime += timeQuantum;
+        currentTime += 1.0; // Increment time by 1 unit
     }
 
     updateJobTable();
@@ -270,16 +272,16 @@ function drawGanttChart(jobHistory, jobQueueHistory) {
         rowDiv.className = "cpu-row";
         ganttChart.appendChild(rowDiv);
 
-        let segmentStart = 0;
-        const cpuHistory = jobHistory.filter(entry => entry.cpuId === i).sort((a, b) => a.startTime - b.startTime);
+        let cpuHistory = jobHistory.filter(entry => entry.cpuId === i).sort((a, b) => a.startTime - b.startTime);
 
         cpuHistory.forEach(entry => {
-            let blockStart = entry.startTime;
-            let blockEnd = entry.endTime;
+            let currentTime = entry.startTime;
+            const endTime = entry.endTime;
 
-            while (blockStart < blockEnd) {
-                const drawEnd = Math.min(blockStart + timeQuantum, blockEnd);
-                const widthPercentage = ((drawEnd - blockStart) / maxEndTime) * 100;
+            while (currentTime < endTime) {
+                const blockEndTime = Math.min(currentTime + timeQuantum, endTime);
+                const duration = blockEndTime - currentTime;
+                const widthPercentage = (duration / maxEndTime) * 100;
 
                 if (widthPercentage > 0) {
                     const jobBlock = document.createElement("div");
@@ -294,11 +296,12 @@ function drawGanttChart(jobHistory, jobQueueHistory) {
                     }
                     rowDiv.appendChild(jobBlock);
                 }
-                blockStart = drawEnd;
+                currentTime = blockEndTime;
             }
         });
     }
 
+    // Add time axis
     const timeAxisDiv = document.createElement("div");
     timeAxisDiv.className = "time-axis";
     ganttChart.appendChild(timeAxisDiv);
@@ -362,19 +365,8 @@ function drawGanttChart(jobHistory, jobQueueHistory) {
 }
 
 // Initialize with default jobs
-addJob(0, 4);   // J1
-addJob(0.5, 2); // J2
-addJob(1, 6);   // J3
-addJob(1, 1.5); // J4
+jobs.push({ id: 1, arrivalTime: 0.0, burstTime: 4.0, remainingTime: 4.0, startTime: -1.0, endTime: 0.0, turnaroundTime: 0.0, lastExecutionTime: -1.0 });
+jobs.push({ id: 2, arrivalTime: 0.5, burstTime: 2.0, remainingTime: 2.0, startTime: -1.0, endTime: 0.0, turnaroundTime: 0.0, lastExecutionTime: -1.0 });
+jobs.push({ id: 3, arrivalTime: 1.0, burstTime: 6.0, remainingTime: 6.0, startTime: -1.0, endTime: 0.0, turnaroundTime: 0.0, lastExecutionTime: -1.0 });
+jobs.push({ id: 4, arrivalTime: 1.0, burstTime: 1.5, remainingTime: 1.5, startTime: -1.0, endTime: 0.0, turnaroundTime: 0.0, lastExecutionTime: -1.0 });
 updateJobTable();
-
-// Re-calculate schedules when CPU count or time quantum changes
-document.getElementById("cpuCount").addEventListener("change", () => {
-    calculateSRTN();
-    calculateRoundRobin();
-});
-
-document.getElementById("timeQuantum").addEventListener("change", () => {
-    calculateSRTN();
-    calculateRoundRobin();
-});
