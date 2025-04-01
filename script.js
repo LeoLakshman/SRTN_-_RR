@@ -25,6 +25,10 @@ function removeLastJob() {
 
 function updateJobTable() {
     const tableBody = document.querySelector("#jobTable tbody");
+    if (!tableBody) {
+        console.error('Element with ID "jobTable" not found.');
+        return;
+    }
     tableBody.innerHTML = '';
     jobs.forEach((job, index) => {
         const row = tableBody.insertRow();
@@ -363,3 +367,14 @@ addJob(0.5, 2); // J2
 addJob(1, 6);   // J3
 addJob(1, 1.5); // J4
 updateJobTable();
+
+// Re-calculate schedules when CPU count or time quantum changes
+document.getElementById("cpuCount").addEventListener("change", () => {
+    calculateSRTN();
+    calculateRoundRobin();
+});
+
+document.getElementById("timeQuantum").addEventListener("change", () => {
+    calculateSRTN();
+    calculateRoundRobin();
+});
