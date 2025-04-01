@@ -167,7 +167,7 @@ function calculateRoundRobin() {
     while (completedJobs < jobs.length) {
         // Check for new arrivals
         jobs.forEach(job => {
-            if (Math.abs(job.arrivalTime - currentTime) < 0.0001 && !jobQueue.includes(job) && job.remainingTime > 0) { // Using a small tolerance
+            if (job.arrivalTime <= currentTime && !jobQueue.includes(job) && job.remainingTime > 0) {
                 jobQueue.push(job);
             }
         });
@@ -368,5 +368,5 @@ function drawGanttChart(jobHistory, jobQueueHistory) {
 jobs.push({ id: 1, arrivalTime: 0.0, burstTime: 4.0, remainingTime: 4.0, startTime: -1.0, endTime: 0.0, turnaroundTime: 0.0, lastExecutionTime: -1.0 });
 jobs.push({ id: 2, arrivalTime: 0.0, burstTime: 2.0, remainingTime: 2.0, startTime: -1.0, endTime: 0.0, turnaroundTime: 0.0, lastExecutionTime: -1.0 });
 jobs.push({ id: 3, arrivalTime: 1.0, burstTime: 6.0, remainingTime: 6.0, startTime: -1.0, endTime: 0.0, turnaroundTime: 0.0, lastExecutionTime: -1.0 });
-jobs.push({ id: 4, arrivalTime: 1.0, burstTime: 1.0, remainingTime: 1.5, startTime: -1.0, endTime: 0.0, turnaroundTime: 0.0, lastExecutionTime: -1.0 });
+jobs.push({ id: 4, arrivalTime: 1.0, burstTime: 1.0, remainingTime: 1.0, startTime: -1.0, endTime: 0.0, turnaroundTime: 0.0, lastExecutionTime: -1.0 });
 updateJobTable();
