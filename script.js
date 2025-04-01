@@ -55,30 +55,33 @@ function updateJobProperty(index, property, value) {
 }
 
 function calculateSRTN() {
+    // Logic for SRTN scheduling
     const cpuCount = parseInt(document.getElementById("cpuCount").value);
-    const timeQuantum = parseFloat(document.getElementById("timeQuantum").value);
+    const timeQuantum = parseFloat(document.getElementById("timeQuantum").value); // Changed to parseFloat
 
     jobs.forEach(job => {
         job.remainingTime = job.burstTime;
-        job.startTime = -1.0;
-        job.endTime = 0.0;
+        job.startTime = -1.0; // Ensure it's a float
+        job.endTime = 0.0;    // Ensure it's a float
         job.turnaroundTime = 0.0;
         job.lastExecutionTime = -1.0;
     });
 
-    let currentTime = 0.0;
+    let currentTime = 0.0; // Ensure it's a float
     let completedJobs = 0;
     let runningJobs = new Array(cpuCount).fill(null);
     let jobHistory = [];
     let jobQueueHistory = [];
 
     while (completedJobs < jobs.length) {
+        // Get all available jobs, including those currently running that need to be considered
         let availableJobs = jobs.filter(job =>
             job.arrivalTime <= currentTime &&
             job.remainingTime > 0
         ).sort((a, b) => a.remainingTime - b.remainingTime || a.arrivalTime - b.arrivalTime);
 
-        if (Math.abs(currentTime % timeQuantum) < 0.0001) {
+        if (Math.abs(currentTime % timeQuantum) < 0.0001) { // Using a small tolerance for float comparison
+            // Store queue state for visualization
             jobQueueHistory.push({
                 time: currentTime,
                 jobs: availableJobs.filter(job =>
@@ -89,34 +92,35 @@ function calculateSRTN() {
                 }))
             });
 
+            // Reassign CPUs based on shortest remaining time
             runningJobs = runningJobs.map(() => null);
             for (let i = 0; i < Math.min(cpuCount, availableJobs.length); i++) {
                 let job = availableJobs[i];
                 if (job.startTime === -1) {
                     job.startTime = currentTime;
                 }
-                runningJobs[i] = { id: job.id, allocatedTime: 0.0 };
+                runningJobs[i] = { id: job.id, allocatedTime: 0.0 }; // Ensure it's a float
             }
         }
 
+        // Process each CPU
         for (let i = 0; i < cpuCount; i++) {
             if (runningJobs[i] !== null) {
                 let runningJob = runningJobs[i];
                 let job = jobs.find(j => j.id === runningJob.id);
-                const executionTime = Math.min(timeQuantum, job.remainingTime);
 
-                job.remainingTime -= executionTime;
-                runningJob.allocatedTime += executionTime;
+                job.remainingTime -= 1.0; // Decrement by 1 unit of time
+                runningJob.allocatedTime += 1.0;
 
                 jobHistory.push({
                     jobId: job.id,
                     cpuId: i,
                     startTime: currentTime,
-                    endTime: currentTime + executionTime
+                    endTime: currentTime + 1.0
                 });
 
-                if (job.remainingTime <= 0.0001) {
-                    job.endTime = currentTime + executionTime;
+                if (job.remainingTime <= 0.0001) { // Using a small tolerance for float comparison
+                    job.endTime = currentTime + 1.0;
                     job.turnaroundTime = job.endTime - job.arrivalTime;
                     completedJobs++;
                     runningJobs[i] = null;
@@ -126,12 +130,12 @@ function calculateSRTN() {
                     jobId: 'idle',
                     cpuId: i,
                     startTime: currentTime,
-                    endTime: currentTime + timeQuantum
+                    endTime: currentTime + 1.0
                 });
             }
         }
 
-        currentTime += timeQuantum;
+        currentTime += 1.0; // Increment time by 1 unit
     }
 
     updateJobTable();
@@ -140,18 +144,20 @@ function calculateSRTN() {
 }
 
 function calculateRoundRobin() {
+    // Logic for Round Robin scheduling
     const cpuCount = parseInt(document.getElementById("cpuCount").value);
-    const timeQuantum = parseFloat(document.getElementById("timeQuantum").value);
+    const timeQuantum = parseFloat(document.getElementById("timeQuantum").value); // Changed to parseFloat
 
+    // Reset job states
     jobs.forEach(job => {
         job.remainingTime = job.burstTime;
-        job.startTime = -1.0;
-        job.endTime = 0.0;
+        job.startTime = -1.0; // Ensure it's a float
+        job.endTime = 0.0;    // Ensure it's a float
         job.turnaroundTime = 0.0;
         job.lastExecutionTime = -1.0;
     });
 
-    let currentTime = 0.0;
+    let currentTime = 0.0; // Ensure it's a float
     let completedJobs = 0;
     let runningJobs = new Array(cpuCount).fill(null);
     let jobQueue = [];
@@ -159,23 +165,27 @@ function calculateRoundRobin() {
     let jobQueueHistory = [];
 
     while (completedJobs < jobs.length) {
+        // Check for new arrivals
         jobs.forEach(job => {
-            if (Math.abs(job.arrivalTime - currentTime) < 0.0001 && !jobQueue.includes(job) && job.remainingTime > 0) {
+            if (Math.abs(job.arrivalTime - currentTime) < 0.0001 && !jobQueue.includes(job) && job.remainingTime > 0) { // Using a small tolerance
                 jobQueue.push(job);
             }
         });
 
-        if (Math.abs(currentTime % timeQuantum) < 0.0001) {
+        if (Math.abs(currentTime % timeQuantum) < 0.0001) { // Using a small tolerance for float comparison
+            const jobsToRequeue = [];
             runningJobs.forEach((runningJob, index) => {
                 if (runningJob !== null) {
                     let job = jobs.find(j => j.id === runningJob.id);
                     if (job.remainingTime > 0) {
-                        jobQueue.push(job);
+                        jobsToRequeue.push(job);
                     }
-                    runningJobs[index] = null;
                 }
             });
+            jobQueue.push(...jobsToRequeue);
+            runningJobs = runningJobs.map(() => null); // Clear all running jobs
 
+            // Record queue state for visualization
             jobQueueHistory.push({
                 time: currentTime,
                 jobs: jobQueue.map(job => ({
@@ -184,35 +194,36 @@ function calculateRoundRobin() {
                 }))
             });
 
+            // Assign jobs to available CPUs
             for (let i = 0; i < cpuCount && jobQueue.length > 0; i++) {
                 if (runningJobs[i] === null) {
                     let job = jobQueue.shift();
                     if (job.startTime === -1) {
                         job.startTime = currentTime;
                     }
-                    runningJobs[i] = { id: job.id, allocatedTime: 0.0 };
+                    runningJobs[i] = { id: job.id, allocatedTime: 0.0 }; // Ensure it's a float
                 }
             }
         }
 
+        // Process each CPU
         for (let i = 0; i < cpuCount; i++) {
             if (runningJobs[i] !== null) {
                 let runningJob = runningJobs[i];
                 let job = jobs.find(j => j.id === runningJob.id);
-                const executionTime = Math.min(timeQuantum, job.remainingTime);
 
-                job.remainingTime -= executionTime;
-                runningJob.allocatedTime += executionTime;
+                job.remainingTime -= 1.0; // Decrement by 1 unit of time
+                runningJob.allocatedTime += 1.0;
 
                 jobHistory.push({
                     jobId: job.id,
                     cpuId: i,
                     startTime: currentTime,
-                    endTime: currentTime + executionTime
+                    endTime: currentTime + 1.0
                 });
 
-                if (job.remainingTime <= 0.0001) {
-                    job.endTime = currentTime + executionTime;
+                if (job.remainingTime <= 0.0001) { // Using a small tolerance for float comparison
+                    job.endTime = currentTime + 1.0;
                     job.turnaroundTime = job.endTime - job.arrivalTime;
                     completedJobs++;
                     runningJobs[i] = null;
@@ -222,12 +233,12 @@ function calculateRoundRobin() {
                     jobId: 'idle',
                     cpuId: i,
                     startTime: currentTime,
-                    endTime: currentTime + timeQuantum
+                    endTime: currentTime + 1.0
                 });
             }
         }
 
-        currentTime += timeQuantum;
+        currentTime += 1.0; // Increment time by 1 unit
     }
 
     updateJobTable();
