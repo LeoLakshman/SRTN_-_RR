@@ -354,7 +354,7 @@ function drawGanttChart(jobHistory, jobQueueHistory) {
 }
 
 // Initialize with default jobs
-jobs.push({ id: 1, arrivalTime: 0.0, burstTime: 4.5, remainingTime: 4.0, startTime: -1.0, endTime: 0.0, turnaroundTime: 0.0, lastExecutionTime: -1.0 });
+jobs.push({ id: 1, arrivalTime: 0.0, burstTime: 5.5, remainingTime: 4.0, startTime: -1.0, endTime: 0.0, turnaroundTime: 0.0, lastExecutionTime: -1.0 });
 jobs.push({ id: 2, arrivalTime: 1.0, burstTime: 2.0, remainingTime: 2.0, startTime: -1.0, endTime: 0.0, turnaroundTime: 0.0, lastExecutionTime: -1.0 });
 jobs.push({ id: 3, arrivalTime: 1.0, burstTime: 6.0, remainingTime: 6.0, startTime: -1.0, endTime: 0.0, turnaroundTime: 0.0, lastExecutionTime: -1.0 });
 jobs.push({ id: 4, arrivalTime: 1.0, burstTime: 1.5, remainingTime: 1.5, startTime: -1.0, endTime: 0.0, turnaroundTime: 0.0, lastExecutionTime: -1.0 });
