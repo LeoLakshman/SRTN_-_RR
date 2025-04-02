@@ -380,36 +380,30 @@ function calculateCpuUtilization(jobHistory, cpuCount) {
     const maxCpuTime = Math.max(...cpuTimes); // Highest CPU time among all CPUs
 
     // Display CPU utilization
-    const utilizationBarsContainer = document.getElementById("cpuUtilizationBars");
-    utilizationBarsContainer.innerHTML = ''; // Clear previous bars
+    const utilizationCardsContainer = document.getElementById("cpuUtilizationCards");
+    utilizationCardsContainer.innerHTML = ''; // Clear previous cards
 
     cpuTimes.forEach((time, index) => {
         const utilization = ((time / maxCpuTime) * 100).toFixed(2); // Calculate utilization percentage
-        const barHtml = `
-            <div class="mb-3">
-                <label>CPU ${index + 1} Utilization: ${utilization}%</label>
-                <div class="progress">
-                    <div class="progress-bar cpu-${index + 1}" role="progressbar" style="width: 0%;" aria-valuenow="${utilization}" aria-valuemin="0" aria-valuemax="100">
-                        ${utilization}%
+        const cardHtml = `
+            <div class="col-md-3 col-sm-6">
+                <div class="cpu-card">
+                    <h4>CPU ${index + 1}</h4>
+                    <div class="circular-progress" style="--progress-value: ${utilization}; --progress-color: ${
+            index % 2 === 0 ? '#4caf50' : '#2196f3'
+        };">
+                        <span>${utilization}%</span>
                     </div>
                 </div>
             </div>
         `;
-        utilizationBarsContainer.innerHTML += barHtml;
-    });
-
-    // Animate the bars
-    const bars = document.querySelectorAll(".progress-bar");
-    bars.forEach((bar, index) => {
-        setTimeout(() => {
-            bar.style.width = `${((cpuTimes[index] / maxCpuTime) * 100).toFixed(2)}%`;
-        }, 100); // Delay to trigger animation
+        utilizationCardsContainer.innerHTML += cardHtml;
     });
 
     // Display overall utilization
     const overallUtilization = ((totalCpuTime / (cpuCount * maxCpuTime)) * 100).toFixed(2);
-    utilizationBarsContainer.innerHTML += `
-        <div class="mt-4 text-center">
+    utilizationCardsContainer.innerHTML += `
+        <div class="col-12 mt-4 text-center">
             <strong>Overall CPU Utilization:</strong> ${overallUtilization}%
         </div>
     `;
