@@ -141,6 +141,7 @@ function calculateSRTN() {
     updateJobTable();
     calculateAverageTurnaroundTime();
     drawGanttChart(jobHistory, jobQueueHistory);
+    calculateCpuUtilization(jobHistory, cpuCount); // Add this line
 }
 
 function calculateRoundRobin() {
@@ -244,6 +245,7 @@ function calculateRoundRobin() {
     updateJobTable();
     calculateAverageTurnaroundTime();
     drawGanttChart(jobHistory, jobQueueHistory);
+    calculateCpuUtilization(jobHistory, cpuCount); // Add this line
 }
 
 function calculateAverageTurnaroundTime() {
@@ -362,6 +364,55 @@ function drawGanttChart(jobHistory, jobQueueHistory) {
 
     const containerHeight = ganttChart.offsetHeight + 100;
     document.getElementById('ganttChartContainer').style.height = `${containerHeight}px`;
+}
+
+function calculateCpuUtilization(jobHistory, cpuCount) {
+    const cpuTimes = new Array(cpuCount).fill(0.0); // Initialize CPU times to 0
+
+    // Calculate total time each CPU spent processing jobs
+    jobHistory.forEach(entry => {
+        if (entry.jobId !== 'idle') {
+            cpuTimes[entry.cpuId] += entry.endTime - entry.startTime;
+        }
+    });
+
+    const totalCpuTime = cpuTimes.reduce((sum, time) => sum + time, 0.0); // Total CPU time
+    const maxCpuTime = Math.max(...cpuTimes); // Highest CPU time among all CPUs
+
+    // Display CPU utilization
+    const utilizationBarsContainer = document.getElementById("cpuUtilizationBars");
+    utilizationBarsContainer.innerHTML = ''; // Clear previous bars
+
+    cpuTimes.forEach((time, index) => {
+        const utilization = ((time / maxCpuTime) * 100).toFixed(2); // Calculate utilization percentage
+        const barHtml = `
+            <div class="mb-3">
+                <label>CPU ${index + 1} Utilization: ${utilization}%</label>
+                <div class="progress">
+                    <div class="progress-bar cpu-${index + 1}" role="progressbar" style="width: 0%;" aria-valuenow="${utilization}" aria-valuemin="0" aria-valuemax="100">
+                        ${utilization}%
+                    </div>
+                </div>
+            </div>
+        `;
+        utilizationBarsContainer.innerHTML += barHtml;
+    });
+
+    // Animate the bars
+    const bars = document.querySelectorAll(".progress-bar");
+    bars.forEach((bar, index) => {
+        setTimeout(() => {
+            bar.style.width = `${((cpuTimes[index] / maxCpuTime) * 100).toFixed(2)}%`;
+        }, 100); // Delay to trigger animation
+    });
+
+    // Display overall utilization
+    const overallUtilization = ((totalCpuTime / (cpuCount * maxCpuTime)) * 100).toFixed(2);
+    utilizationBarsContainer.innerHTML += `
+        <div class="mt-4 text-center">
+            <strong>Overall CPU Utilization:</strong> ${overallUtilization}%
+        </div>
+    `;
 }
 
 // Initialize with default jobs
