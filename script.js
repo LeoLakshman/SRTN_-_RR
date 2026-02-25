@@ -13,7 +13,7 @@ function addJob() {
         lastExecutionTime: -1.0
     };
     jobs.push(newJob);
-    updateJobTable();
+    updateJobTable(); 
 }
 
 function removeLastJob() {
