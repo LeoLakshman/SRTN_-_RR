@@ -19,7 +19,7 @@ function addJob() {
 function removeLastJob() {
     if (jobs.length > 0) {
         jobs.pop();
-        updateJobTable();
+        updateJobTable(); 
     }
 }
 
